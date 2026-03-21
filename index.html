@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burnbank Blues - Match Records</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>? Burnbank Blues</h1>
+            <p>Match Records, Stats, and Multi-user Tracking</p>
+        </header>
+
+        <main>
+            <section class="section user-section">
+                <h2>Collaborators (Shared Dataset)</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userSelect">Active user:</label>
+                        <select id="userSelect" aria-label="Active user"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserName">Add User (max 4):</label>
+                        <div class="user-add-row">
+                            <input type="text" id="newUserName" placeholder="New username">
+                            <button id="addUser" class="btn btn-primary">Add</button>
+                        </div>
+                    </div>
+                </div>
+                <p class="hint">All users share the same match storage. Changes are global and visible to everyone.</p>
+            </section>
+
+            <section class="section policy-section">
+                <h2>Retention Policy</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="retentionDays">Keep records for (days):</label>
+                        <input type="number" id="retentionDays" min="30" max="3650" step="1" value="365">
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button id="applyRetention" class="btn btn-primary">Apply Policy</button>
+                    </div>
+                </div>
+                <p class="hint">Records older than retention period are automatically pruned.</p>
+            </section>
+
+            <section class="section stats-section">
+                <h2>Stats Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-item"><strong>Total Matches:</strong> <span id="totalMatches">0</span></div>
+                    <div class="stat-item"><strong>Wins:</strong> <span id="winCount">0</span></div>
+                    <div class="stat-item"><strong>Draws:</strong> <span id="drawCount">0</span></div>
+                    <div class="stat-item"><strong>Losses:</strong> <span id="lossCount">0</span></div>
+                    <div class="stat-item"><strong>Goals For:</strong> <span id="goalsFor">0</span></div>
+                    <div class="stat-item"><strong>Goals Against:</strong> <span id="goalsAgainst">0</span></div>
+                    <div class="stat-item"><strong>Goal Diff:</strong> <span id="goalDiff">0</span></div>
+                </div>
+            </section>
+
+            <section class="section filter-section">
+                <h2>Search / Filter / Pagination</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filterOpponent">Opponent:</label>
+                        <input type="text" id="filterOpponent" placeholder="Filter by opponent">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterOutcome">Outcome:</label>
+                        <select id="filterOutcome">
+                            <option value="all">All</option>
+                            <option value="win">Win</option>
+                            <option value="draw">Draw</option>
+                            <option value="loss">Loss</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filterFromDate">From Date:</label>
+                        <input type="date" id="filterFromDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterToDate">To Date:</label>
+                        <input type="date" id="filterToDate">
+                    </div>
+                </div>
+                <div class="form-row pagination-row">
+                    <div class="form-group">
+                        <label for="pageSize">Page Size:</label>
+                        <select id="pageSize">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                        </select>
+                    </div>
+                    <div class="page-controls">
+                        <button id="prevPage" class="btn">Prev</button>
+                        <span id="pageInfo">Page 1</span>
+                        <button id="nextPage" class="btn">Next</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Add / Edit Match</h2>
+                <form id="matchForm">
+                    <div class="form-group">
+                        <label for="opponent">Opponent Team:</label>
+                        <input type="text" id="opponent" required placeholder="e.g., City FC">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="burnbankScore">Burnbank Blues Score:</label>
+                            <input type="number" id="burnbankScore" required min="0" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="opponentScore">Opponent Score:</label>
+                            <input type="number" id="opponentScore" required min="0" placeholder="0">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="matchDate">Date:</label>
+                        <input type="date" id="matchDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Goalscorers:</label>
+                        <div id="goalscorersRows"></div>
+                        <button type="button" id="addGoalscorer" class="btn btn-secondary">Add Scorer</button>
+                        <small>Enter unique invividual scorers and goals. Total must match Burnbank score.</small>
+                    </div>
+
+                    <input type="hidden" id="editingId" value="">
+                    <button type="submit" class="btn btn-primary" id="submitMatch">Add Match</button>
+                    <button type="button" id="cancelEdit" class="btn btn-secondary" style="display:none;">Cancel Edit</button>
+                </form>
+            </section>
+
+            <section class="section">
+                <h2>Top Goalscorers</h2>
+                <div id="topScorers" class="scorers-table">
+                    <p class="empty-state">No matches recorded yet</p>
+                </div>
+                <div id="playerProfile" class="player-profile" aria-live="polite"></div>
+            </section>
+
+            <section class="section">
+                <h2>Match History</h2>
+                <div id="matchHistory" class="matches-list">
+                    <p class="empty-state">No matches recorded yet</p>
+                </div>
+            </section>
+
+            <section class="section import-export-section">
+                <h2>Import / Export</h2>
+                <div class="form-row">
+                    <button id="exportData" class="btn btn-primary">Export JSON</button>
+                    <input type="file" id="importFile" accept="application/json" style="display:none;">
+                    <button id="triggerImport" class="btn btn-secondary">Import JSON</button>
+                </div>
+            </section>
+
+            <section class="section">
+                <button id="clearData" class="btn btn-danger">Clear All Data</button>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Burnbank Blues. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
