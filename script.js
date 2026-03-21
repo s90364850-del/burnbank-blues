@@ -81,7 +81,7 @@ class MatchManager {
     }
 }
 
-const DEFAULT_USERS = ['steph', 'ally', 'bobby', 'jordan'];
+const DEFAULT_USERS = ['stephen', 'alan', 'alison', 'stacey'];
 function getAllUsers() {
     const stored = localStorage.getItem('burnbankUsers');
     if (stored) {
