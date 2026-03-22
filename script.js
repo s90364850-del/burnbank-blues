@@ -124,7 +124,7 @@ const editingIdInput = document.getElementById('editingId');
 const playerProfileDiv = document.getElementById('playerProfile');
 const exportDataBtn = document.getElementById('exportData');
 const importFileInput = document.getElementById('importFile');
-const triggerImportBtn = document.getElementById('triggerImport');
+const importStatusDiv = document.getElementById('importStatus');
 
 function initUserSelect() {
     const users = getAllUsers().slice(0, 4);
@@ -356,9 +356,17 @@ function handleImportData(file) {
             manager.pruneExpired();
             manager.saveMatches();
             render();
-            alert('Imported ' + imported.matches.length + ' matches.');
+            importStatusDiv.textContent = `Successfully imported ${imported.matches.length} matches!`;
+            importStatusDiv.className = 'import-status success';
+            setTimeout(() => {
+                importStatusDiv.style.display = 'none';
+            }, 3000);
         } catch (err) {
-            alert('Failed to import file. Ensure JSON format is correct.');
+            importStatusDiv.textContent = 'Import failed: ' + err.message;
+            importStatusDiv.className = 'import-status error';
+            setTimeout(() => {
+                importStatusDiv.style.display = 'none';
+            }, 5000);
             console.error(err);
         }
     };
@@ -572,10 +580,14 @@ addUserBtn.addEventListener('click', () => {
     newUserNameInput.value = '';
 });
 exportDataBtn.addEventListener('click', handleExportData);
-triggerImportBtn.addEventListener('click', () => importFileInput.click());
 importFileInput.addEventListener('change', e => {
     const file = e.target.files[0];
-    if (file) handleImportData(file);
+    if (file) {
+        importStatusDiv.style.display = 'block';
+        importStatusDiv.textContent = `Importing ${file.name}...`;
+        importStatusDiv.className = 'import-status importing';
+        handleImportData(file);
+    }
     e.target.value = '';
 });
 

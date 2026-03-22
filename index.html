@@ -153,9 +153,12 @@
                 <h2>Import / Export</h2>
                 <div class="form-row">
                     <button id="exportData" class="btn btn-primary">Export JSON</button>
-                    <input type="file" id="importFile" accept="application/json" style="display:none;">
-                    <button id="triggerImport" class="btn btn-secondary">Import JSON</button>
+                    <div class="import-container">
+                        <input type="file" id="importFile" accept="application/json" class="file-input">
+                        <label for="importFile" class="file-label">Choose JSON file...</label>
+                    </div>
                 </div>
+                <div id="importStatus" class="import-status" style="display:none;"></div>
             </section>
 
             <section class="section">
