@@ -39,6 +39,13 @@ header p {
     font-size: 1.1em;
 }
 
+.team-logo {
+    height: 60px;
+    vertical-align: middle;
+    margin-right: 15px;
+    border-radius: 5px;
+}
+
 main {
     display: flex;
     flex-direction: column;
