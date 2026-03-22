@@ -335,26 +335,32 @@ function handleExportData() {
 }
 
 function handleImportData(file) {
+    console.log('handleImportData called with file:', file);
     const reader = new FileReader();
     reader.onload = e => {
+        console.log('FileReader onload fired');
         try {
             const imported = JSON.parse(e.target.result);
+            console.log('Parsed JSON:', imported);
             if (!imported.matches || !Array.isArray(imported.matches)) {
                 throw new Error('Invalid import format');
             }
 
             const incoming = imported.matches.map(m => ({ ...m, id: m.id || Date.now() + Math.random() }));
+            console.log('Incoming matches:', incoming);
             const merged = [...manager.matches, ...incoming].reduce((acc, match) => {
                 acc[String(match.id)] = match;
                 return acc;
             }, {});
             manager.matches = Object.values(merged);
+            console.log('Merged matches:', manager.matches);
             if (imported.retentionDays) {
                 manager.saveRetentionDays(Number(imported.retentionDays));
                 retentionDaysInput.value = manager.retentionDays;
             }
             manager.pruneExpired();
             manager.saveMatches();
+            console.log('About to call render()');
             render();
             importStatusDiv.textContent = `Successfully imported ${imported.matches.length} matches!`;
             importStatusDiv.className = 'import-status success';
@@ -362,6 +368,7 @@ function handleImportData(file) {
                 importStatusDiv.style.display = 'none';
             }, 3000);
         } catch (err) {
+            console.error('Import error:', err);
             importStatusDiv.textContent = 'Import failed: ' + err.message;
             importStatusDiv.className = 'import-status error';
             setTimeout(() => {
@@ -370,6 +377,10 @@ function handleImportData(file) {
             console.error(err);
         }
     };
+    reader.onerror = e => {
+        console.error('FileReader error:', e);
+    };
+    console.log('Starting to read file as text');
     reader.readAsText(file);
 }
 
@@ -581,12 +592,16 @@ addUserBtn.addEventListener('click', () => {
 });
 exportDataBtn.addEventListener('click', handleExportData);
 importFileInput.addEventListener('change', e => {
+    console.log('File input change event fired', e.target.files);
     const file = e.target.files[0];
     if (file) {
+        console.log('File selected:', file.name, file.type, file.size);
         importStatusDiv.style.display = 'block';
         importStatusDiv.textContent = `Importing ${file.name}...`;
         importStatusDiv.className = 'import-status importing';
         handleImportData(file);
+    } else {
+        console.log('No file selected');
     }
     e.target.value = '';
 });
