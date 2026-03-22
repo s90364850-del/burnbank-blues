@@ -384,35 +384,32 @@ function handleImportData(file) {
     reader.readAsText(file);
 }
 
-function handleImportData(file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-        try {
-            const imported = JSON.parse(e.target.result);
-            if (!imported.matches || !Array.isArray(imported.matches)) {
-                throw new Error('Invalid import format');
-            }
-
-            const incoming = imported.matches.map(m => ({ ...m, id: m.id || Date.now() + Math.random() }));
-            const merged = [...manager.matches, ...incoming].reduce((acc, match) => {
-                acc[String(match.id)] = match;
-                return acc;
-            }, {});
-            manager.matches = Object.values(merged);
-            manager.pruneExpired();
-            manager.saveMatches();
-            render();
-            alert('Imported ' + imported.matches.length + ' matches.');
-        } catch (err) {
-            alert('Failed to import file. Ensure JSON format is correct.');
-            console.error(err);
-        }
-    };
-    reader.readAsText(file);
-}
+function filterMatches(matches) {
     let filtered = [...matches];
 
     const opponentFilter = filterOpponentEl.value.trim().toLowerCase();
+    if (opponentFilter) {
+        filtered = filtered.filter(m => m.opponent.toLowerCase().includes(opponentFilter));
+    }
+
+    const outcome = filterOutcomeEl.value;
+    if (outcome !== 'all') {
+        filtered = filtered.filter(m => {
+            const win = m.burnbankScore > m.opponentScore;
+            const draw = m.burnbankScore === m.opponentScore;
+            const loss = m.burnbankScore < m.opponentScore;
+            return (outcome === 'win' && win) || (outcome === 'draw' && draw) || (outcome === 'loss' && loss);
+        });
+    }
+
+    const from = filterFromDateEl.value ? new Date(filterFromDateEl.value) : null;
+    const to = filterToDateEl.value ? new Date(filterToDateEl.value) : null;
+    if (from) filtered = filtered.filter(m => new Date(m.date) >= from);
+    if (to) filtered = filtered.filter(m => new Date(m.date) <= to);
+
+    return filtered;
+}
+
     if (opponentFilter) {
         filtered = filtered.filter(m => m.opponent.toLowerCase().includes(opponentFilter));
     }
