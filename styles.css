@@ -71,6 +71,46 @@ main {
     border-radius: 6px;
 }
 
+.league-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.league-table th, .league-table td {
+    padding: 8px 12px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+}
+
+.league-table th {
+    background: #001f3f;
+    color: white;
+    font-weight: bold;
+}
+
+.league-table td {
+    background: #f7fafc;
+}
+
+.recent-form {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.form-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.form-win { background: #48bb78; }
+.form-loss { background: #f56565; }
+.form-draw { background: #ed8936; }
+
 .form-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -164,30 +204,50 @@ main {
     box-shadow: 0 2px 8px rgba(0,0,0,.12);
 }
 
-.scorers-table {
-    display: grid;
+.scorers-chart {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
 }
 
-.scorer-row {
-    display: grid;
-    grid-template-columns: 1fr 90px;
-    gap: 15px;
-    padding: 15px;
+.scorer-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
     background: #f7fafc;
     border-radius: 5px;
     border-left: 4px solid #001f3f;
-    align-items: center;
     cursor: pointer;
 }
 
-.scorer-row:hover {
+.scorer-bar:hover {
     background: #fff9c4;
 }
 
 .scorer-name {
     font-weight: 600;
     color: #333;
+    min-width: 120px;
+}
+
+.scorer-bar-fill {
+    flex: 1;
+    height: 20px;
+    background: #001f3f;
+    border-radius: 10px;
+    position: relative;
+}
+
+.scorer-bar-fill::after {
+    content: attr(data-goals);
+    position: absolute;
+    right: 5px;
+    top: 0;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
 }
 
 .scorer-goals {
@@ -197,64 +257,70 @@ main {
     color: #001f3f;
 }
 
-.matches-list {
+.matches-timeline {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
-.match-card {
-    padding: 20px;
+.match-timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
     background: #f7fafc;
     border-radius: 8px;
     border-left: 4px solid #001f3f;
 }
 
-.match-header {
+.match-timeline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+
+.match-timeline-icon.win { background: #48bb78; }
+.match-timeline-icon.loss { background: #f56565; }
+.match-timeline-icon.draw { background: #ed8936; }
+
+.match-timeline-content {
+    flex: 1;
+}
+
+.match-timeline-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
-.match-score {
+.match-timeline-score {
     font-size: 1.2em;
     font-weight: bold;
     color: #333;
 }
 
-.burnbank-win {
-    color: #48bb78;
-}
-
-.burnbank-loss {
-    color: #f56565;
-}
-
-.burnbank-draw {
-    color: #ed8936;
-}
-
-.match-date {
+.match-timeline-date {
     font-size: 0.9em;
     color: #999;
 }
 
-.match-goalscorers {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #e2e8f0;
+.match-timeline-scorers {
     font-size: 0.95em;
     color: #666;
 }
 
-.match-goalscorers strong {
+.match-timeline-scorers strong {
     color: #333;
 }
 
-.match-actions {
+.match-timeline-actions {
     text-align: right;
-    margin-top: 10px;
 }
 
 .empty-state {

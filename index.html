@@ -14,49 +14,42 @@
         </header>
 
         <main>
-            <section class="section user-section">
-                <h2>Collaborators (Shared Dataset)</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="userSelect">Active user:</label>
-                        <select id="userSelect" aria-label="Active user"></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="newUserName">Add User (max 4):</label>
-                        <div class="user-add-row">
-                            <input type="text" id="newUserName" placeholder="New username">
-                            <button id="addUser" class="btn btn-primary">Add</button>
-                        </div>
-                    </div>
-                </div>
-                <p class="hint">All users share the same match storage. Changes are global and visible to everyone.</p>
-            </section>
-
-            <section class="section policy-section">
-                <h2>Retention Policy</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="retentionDays">Keep records for (days):</label>
-                        <input type="number" id="retentionDays" min="30" max="3650" step="1" value="365">
-                    </div>
-                    <div class="form-group">
-                        <label>&nbsp;</label>
-                        <button id="applyRetention" class="btn btn-primary">Apply Policy</button>
-                    </div>
-                </div>
-                <p class="hint">Records older than retention period are automatically pruned.</p>
-            </section>
-
             <section class="section stats-section">
-                <h2>Stats Dashboard</h2>
-                <div class="stats-grid">
-                    <div class="stat-item"><strong>Total Matches:</strong> <span id="totalMatches">0</span></div>
-                    <div class="stat-item"><strong>Wins:</strong> <span id="winCount">0</span></div>
-                    <div class="stat-item"><strong>Draws:</strong> <span id="drawCount">0</span></div>
-                    <div class="stat-item"><strong>Losses:</strong> <span id="lossCount">0</span></div>
-                    <div class="stat-item"><strong>Goals For:</strong> <span id="goalsFor">0</span></div>
-                    <div class="stat-item"><strong>Goals Against:</strong> <span id="goalsAgainst">0</span></div>
-                    <div class="stat-item"><strong>Goal Diff:</strong> <span id="goalDiff">0</span></div>
+                <h2>League Table</h2>
+                <table class="league-table">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Played</th>
+                            <th>Won</th>
+                            <th>Drawn</th>
+                            <th>Lost</th>
+                            <th>GF</th>
+                            <th>GA</th>
+                            <th>GD</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leagueTableBody">
+                        <tr>
+                            <td>Burnbank Blues</td>
+                            <td id="played">0</td>
+                            <td id="won">0</td>
+                            <td id="drawn">0</td>
+                            <td id="lost">0</td>
+                            <td id="gf">0</td>
+                            <td id="ga">0</td>
+                            <td id="gd">0</td>
+                            <td id="points">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section form-section">
+                <h2>Recent Form (Last 6 Games)</h2>
+                <div id="recentForm" class="recent-form">
+                    <!-- Circles will be added here -->
                 </div>
             </section>
 
@@ -132,7 +125,7 @@
                         <label>Goalscorers:</label>
                         <div id="goalscorersRows"></div>
                         <button type="button" id="addGoalscorer" class="btn btn-secondary">Add Scorer</button>
-                        <small>Enter unique invividual scorers and goals. Total must match Burnbank score.</small>
+                        <small>Enter unique individual scorers and goals. Total must match Burnbank score.</small>
                     </div>
 
                     <input type="hidden" id="editingId" value="">
@@ -143,7 +136,7 @@
 
             <section class="section">
                 <h2>Top Goalscorers</h2>
-                <div id="topScorers" class="scorers-table">
+                <div id="topScorers" class="scorers-chart">
                     <p class="empty-state">No matches recorded yet</p>
                 </div>
                 <div id="playerProfile" class="player-profile" aria-live="polite"></div>
@@ -151,7 +144,7 @@
 
             <section class="section">
                 <h2>Match History</h2>
-                <div id="matchHistory" class="matches-list">
+                <div id="matchHistory" class="matches-timeline">
                     <p class="empty-state">No matches recorded yet</p>
                 </div>
             </section>

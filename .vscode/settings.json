@@ -1,0 +1,6 @@
+{
+  "github.copilot.chat.claudeAgent.enabled": true,
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

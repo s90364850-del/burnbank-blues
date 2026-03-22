@@ -1,17 +1,13 @@
 // Data Management
 class MatchManager {
     constructor() {
-        this.retentionDays = this.loadRetentionDays();
+        this.retentionDays = 365; // Fixed retention
         this.matches = this.loadMatches();
         this.pruneExpired();
     }
 
     storageKey() {
         return 'burnbankMatches';
-    }
-
-    retentionKey() {
-        return 'burnbankRetention';
     }
 
     loadMatches() {
@@ -62,16 +58,6 @@ class MatchManager {
         this.saveMatches();
     }
 
-    loadRetentionDays() {
-        const stored = localStorage.getItem(this.retentionKey());
-        return stored ? Number(stored) : 365;
-    }
-
-    saveRetentionDays(days) {
-        this.retentionDays = days;
-        localStorage.setItem(this.retentionKey(), String(days));
-    }
-
     pruneExpired() {
         if (!this.retentionDays) return;
         const cutoff = new Date();
@@ -110,8 +96,6 @@ let currentPage = 1;
 const userSelect = document.getElementById('userSelect');
 const newUserNameInput = document.getElementById('newUserName');
 const addUserBtn = document.getElementById('addUser');
-const retentionDaysInput = document.getElementById('retentionDays');
-const applyRetentionBtn = document.getElementById('applyRetention');
 const totalMatchesEl = document.getElementById('totalMatches');
 const winCountEl = document.getElementById('winCount');
 const drawCountEl = document.getElementById('drawCount');
@@ -152,22 +136,56 @@ function initUserSelect() {
     localStorage.setItem('burnbankActiveUser', activeUser);
 
     manager = new MatchManager();
-    retentionDaysInput.value = manager.retentionDays;
     currentPage = 1;
     clearEditState();
     render();
 }
 
-function addGoalscorerRow(name = '', goals = '') {
+function getPreviousScorers() {
+    const scorers = new Set();
+    manager.matches.forEach(match => {
+        match.goalscorers.forEach(s => scorers.add(s.name));
+    });
+    return Array.from(scorers).sort();
+}
     const row = document.createElement('div');
     row.className = 'goalscorer-row';
+    const previousScorers = getPreviousScorers();
+    const nameOptions = previousScorers.map(s => `<option value="${s}">${s}</option>`).join('');
+    const goalsOptions = Array.from({length: 11}, (_, i) => `<option value="${i}" ${goals == i ? 'selected' : ''}>${i}</option>`).join('');
     row.innerHTML = `
         <div class="form-row" style="grid-template-columns: 2fr 1fr auto; gap: 8px;">
-            <input type="text" class="goalscorer-name" placeholder="Player name" value="${name}">
-            <input type="number" class="goalscorer-goals" placeholder="Goals" min="0" value="${goals}">
-            <button type="button" class="btn btn-delete remove-scorer">?</button>
+            <select class="goalscorer-name" required>
+                <option value="">Select Player</option>
+                ${nameOptions}
+                <option value="new">Add New Player</option>
+            </select>
+            <select class="goalscorer-goals" required>
+                ${goalsOptions}
+            </select>
+            <button type="button" class="btn btn-delete remove-scorer">✕</button>
         </div>
     `;
+
+    const nameSelect = row.querySelector('.goalscorer-name');
+    const goalsSelect = row.querySelector('.goalscorer-goals');
+    if (name && !previousScorers.includes(name)) {
+        nameSelect.innerHTML += `<option value="${name}" selected>${name}</option>`;
+    } else if (name) {
+        nameSelect.value = name;
+    }
+
+    nameSelect.addEventListener('change', function() {
+        if (this.value === 'new') {
+            const newName = prompt('Enter new player name:');
+            if (newName && newName.trim()) {
+                this.innerHTML += `<option value="${newName.trim()}" selected>${newName.trim()}</option>`;
+                this.value = newName.trim();
+            } else {
+                this.value = '';
+            }
+        }
+    });
 
     row.querySelector('.remove-scorer').addEventListener('click', () => row.remove());
     goalscorersRowsDiv.appendChild(row);
@@ -347,19 +365,32 @@ function handleImportData(file) {
     reader.readAsText(file);
 }
 
-function applyRetentionPolicy() {
-    const days = Number(retentionDaysInput.value);
-    if (!Number.isInteger(days) || days < 30 || days > 3650) {
-        alert('Retention must be between 30 and 3650 days.');
-        return;
-    }
-    manager.saveRetentionDays(days);
-    manager.pruneExpired();
-    render();
-    alert(`Retention policy set to ${days} days.`);
-}
+function handleImportData(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (!imported.matches || !Array.isArray(imported.matches)) {
+                throw new Error('Invalid import format');
+            }
 
-function filterMatches(matches) {
+            const incoming = imported.matches.map(m => ({ ...m, id: m.id || Date.now() + Math.random() }));
+            const merged = [...manager.matches, ...incoming].reduce((acc, match) => {
+                acc[String(match.id)] = match;
+                return acc;
+            }, {});
+            manager.matches = Object.values(merged);
+            manager.pruneExpired();
+            manager.saveMatches();
+            render();
+            alert('Imported ' + imported.matches.length + ' matches.');
+        } catch (err) {
+            alert('Failed to import file. Ensure JSON format is correct.');
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+}
     let filtered = [...matches];
 
     const opponentFilter = filterOpponentEl.value.trim().toLowerCase();
@@ -407,13 +438,25 @@ function renderStats(matches) {
         else draws++;
     });
 
-    totalMatchesEl.textContent = total;
-    winCountEl.textContent = wins;
-    drawCountEl.textContent = draws;
-    lossCountEl.textContent = losses;
-    goalsForEl.textContent = gf;
-    goalsAgainstEl.textContent = ga;
-    goalDiffEl.textContent = gf - ga;
+    const gd = gf - ga;
+    const points = wins * 3 + draws;
+
+    document.getElementById('played').textContent = total;
+    document.getElementById('won').textContent = wins;
+    document.getElementById('drawn').textContent = draws;
+    document.getElementById('lost').textContent = losses;
+    document.getElementById('gf').textContent = gf;
+    document.getElementById('ga').textContent = ga;
+    document.getElementById('gd').textContent = gd;
+    document.getElementById('points').textContent = points;
+
+    // Recent form
+    const recentMatches = manager.getAllMatches().slice(-6).reverse();
+    const recentFormDiv = document.getElementById('recentForm');
+    recentFormDiv.innerHTML = recentMatches.map(match => {
+        const result = match.burnbankScore > match.opponentScore ? 'win' : match.burnbankScore < match.opponentScore ? 'loss' : 'draw';
+        return `<div class="form-circle form-${result}" title="${new Date(match.date).toLocaleDateString()}: ${match.burnbankScore}-${match.opponentScore} vs ${match.opponent}"></div>`;
+    }).join('');
 }
 
 function renderTopScorers() {
@@ -424,15 +467,19 @@ function renderTopScorers() {
         return;
     }
 
-    topScorersDiv.innerHTML = topScorers.map((scorer, index) => `
-        <div class="scorer-row" data-scorer-name="${scorer.name}">
-            <div class="scorer-name">${index + 1}. ${scorer.name}</div>
-            <div class="scorer-goals">${scorer.goals}</div>
-        </div>
-    `).join('');
+    const maxGoals = Math.max(...topScorers.map(s => s.goals));
+    topScorersDiv.innerHTML = topScorers.map((scorer, index) => {
+        const width = maxGoals > 0 ? (scorer.goals / maxGoals) * 100 : 0;
+        return `
+            <div class="scorer-bar" data-scorer-name="${scorer.name}">
+                <div class="scorer-name">${index + 1}. ${scorer.name}</div>
+                <div class="scorer-bar-fill" style="width: ${width}%;" data-goals="${scorer.goals}"></div>
+            </div>
+        `;
+    }).join('');
 
-    topScorersDiv.querySelectorAll('.scorer-row').forEach(row => {
-        row.addEventListener('click', () => showPlayerProfile(row.dataset.scorerName));
+    topScorersDiv.querySelectorAll('.scorer-bar').forEach(bar => {
+        bar.addEventListener('click', () => showPlayerProfile(bar.dataset.scorerName));
     });
 
     playerProfileDiv.innerHTML = '<p>Click a scorer for profile details.</p>';
@@ -463,24 +510,28 @@ function renderMatchHistory() {
 
     matchHistoryDiv.innerHTML = pageMatches.map(match => {
         const result = match.burnbankScore > match.opponentScore ? 'win' : match.burnbankScore < match.opponentScore ? 'loss' : 'draw';
-        const resultClass = `burnbank-${result}`;
         const scorersText = match.goalscorers.length ? match.goalscorers.map(s => `${s.name}: ${s.goals}`).join(', ') : 'No scorers recorded';
 
         return `
-            <div class="match-card">
-                <div class="match-header">
-                    <div class="match-score">
-                        Burnbank Blues <span class="${resultClass}">${match.burnbankScore}</span> - <span>${match.opponentScore}</span> ${match.opponent}
+            <div class="match-timeline-item">
+                <div class="match-timeline-icon ${result}">
+                    ${result === 'win' ? 'W' : result === 'loss' ? 'L' : 'D'}
+                </div>
+                <div class="match-timeline-content">
+                    <div class="match-timeline-header">
+                        <div class="match-timeline-score">
+                            Burnbank Blues ${match.burnbankScore} - ${match.opponentScore} ${match.opponent}
+                        </div>
+                        <div class="match-timeline-date">${new Date(match.date).toLocaleDateString()}</div>
                     </div>
-                    <div class="match-date">${new Date(match.date).toLocaleDateString()}</div>
+                    <div class="match-timeline-scorers">
+                        <strong>Goalscorers:</strong> ${scorersText}
+                    </div>
+                    <div class="match-timeline-scorers">
+                        <strong>Recorded By:</strong> ${match.createdBy || 'unknown'}
+                    </div>
                 </div>
-                <div class="match-goalscorers">
-                    <strong>Goalscorers:</strong> ${scorersText}
-                </div>
-                <div class="match-goalscorers">
-                    <strong>Recorded By:</strong> ${match.createdBy || 'unknown'}
-                </div>
-                <div class="match-actions">
+                <div class="match-timeline-actions">
                     <button type="button" onclick="handleEditMatch(${match.id})" class="btn btn-secondary">Edit</button>
                     <button type="button" onclick="handleDeleteMatch(${match.id})" class="btn btn-delete">Delete</button>
                 </div>
@@ -498,7 +549,6 @@ matchForm.addEventListener('submit', handleAddOrUpdateMatch);
 addGoalscorerBtn.addEventListener('click', () => addGoalscorerRow());
 cancelEditBtn.addEventListener('click', clearEditState);
 clearDataBtn.addEventListener('click', handleClearData);
-applyRetentionBtn.addEventListener('click', applyRetentionPolicy);
 filterOpponentEl.addEventListener('input', () => { currentPage = 1; render(); });
 filterOutcomeEl.addEventListener('change', () => { currentPage = 1; render(); });
 filterFromDateEl.addEventListener('change', () => { currentPage = 1; render(); });
