@@ -191,7 +191,6 @@ function saveUsers(users) {
 
 let activeUser = '';
 let manager = new MatchManager();
-let currentPage = 1;
 
 const userSelect = document.getElementById('userSelect');
 const newUserNameInput = document.getElementById('newUserName');
@@ -203,14 +202,6 @@ const lossCountEl = document.getElementById('lossCount');
 const goalsForEl = document.getElementById('goalsFor');
 const goalsAgainstEl = document.getElementById('goalsAgainst');
 const goalDiffEl = document.getElementById('goalDiff');
-const filterOpponentEl = document.getElementById('filterOpponent');
-const filterOutcomeEl = document.getElementById('filterOutcome');
-const filterFromDateEl = document.getElementById('filterFromDate');
-const filterToDateEl = document.getElementById('filterToDate');
-const pageSizeEl = document.getElementById('pageSize');
-const prevPageBtn = document.getElementById('prevPage');
-const nextPageBtn = document.getElementById('nextPage');
-const pageInfoEl = document.getElementById('pageInfo');
 const matchForm = document.getElementById('matchForm');
 const topScorersDiv = document.getElementById('topScorers');
 const matchHistoryDiv = document.getElementById('matchHistory');
@@ -486,42 +477,6 @@ function handleImportData(file) {
     reader.readAsText(file);
 }
 
-function filterMatches(matches) {
-    let filtered = [...matches];
-
-    const opponentFilter = filterOpponentEl.value.trim().toLowerCase();
-    if (opponentFilter) {
-        filtered = filtered.filter(m => m.opponent.toLowerCase().includes(opponentFilter));
-    }
-
-    const outcome = filterOutcomeEl.value;
-    if (outcome !== 'all') {
-        filtered = filtered.filter(m => {
-            const win = m.burnbankScore > m.opponentScore;
-            const draw = m.burnbankScore === m.opponentScore;
-            const loss = m.burnbankScore < m.opponentScore;
-            return (outcome === 'win' && win) || (outcome === 'draw' && draw) || (outcome === 'loss' && loss);
-        });
-    }
-
-    const from = filterFromDateEl.value ? new Date(filterFromDateEl.value) : null;
-    const to = filterToDateEl.value ? new Date(filterToDateEl.value) : null;
-    if (from) filtered = filtered.filter(m => new Date(m.date) >= from);
-    if (to) filtered = filtered.filter(m => new Date(m.date) <= to);
-
-    return filtered;
-}
-
-function getPagedMatches(matches) {
-    const pageSize = Number(pageSizeEl.value);
-    const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
-    if (currentPage > totalPages) currentPage = totalPages;
-    if (currentPage < 1) currentPage = 1;
-    const start = (currentPage - 1) * pageSize;
-    pageInfoEl.textContent = `Page ${currentPage} of ${totalPages}`;
-    return matches.slice(start, start + pageSize);
-}
-
 function renderStats(matches) {
     const total = matches.length;
     let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
@@ -566,9 +521,10 @@ function renderTopScorers() {
     const maxGoals = Math.max(...topScorers.map(s => s.goals));
     topScorersDiv.innerHTML = topScorers.map((scorer, index) => {
         const width = maxGoals > 0 ? (scorer.goals / maxGoals) * 100 : 0;
+        const isLeader = index === 0;
         return `
-            <div class="scorer-bar" data-scorer-name="${scorer.name}">
-                <div class="scorer-name">${index + 1}. ${scorer.name}</div>
+            <div class="scorer-bar ${isLeader ? 'leader' : ''}" data-scorer-name="${scorer.name}">
+                <div class="scorer-name">${index + 1}. ${scorer.name} ${isLeader ? '👑' : ''}</div>
                 <div class="scorer-bar-fill" style="width: ${width}%;" data-goals="${scorer.goals}"></div>
             </div>
         `;
@@ -595,16 +551,14 @@ function showPlayerProfile(name) {
 
 function renderMatchHistory() {
     const allMatches = manager.getAllMatches();
-    const filtered = filterMatches(allMatches);
-    renderStats(filtered);
-    const pageMatches = getPagedMatches(filtered);
+    renderStats(allMatches);
 
-    if (!pageMatches.length) {
+    if (!allMatches.length) {
         matchHistoryDiv.innerHTML = '<p class="empty-state">No matches recorded yet</p>';
         return;
     }
 
-    matchHistoryDiv.innerHTML = pageMatches.map(match => {
+    matchHistoryDiv.innerHTML = allMatches.map(match => {
         const result = match.burnbankScore > match.opponentScore ? 'win' : match.burnbankScore < match.opponentScore ? 'loss' : 'draw';
         const scorersText = match.goalscorers.length ? match.goalscorers.map(s => `${s.name}: ${s.goals}`).join(', ') : 'No scorers recorded';
 
@@ -636,9 +590,95 @@ function renderMatchHistory() {
     }).join('');
 }
 
+function renderPerformanceChart() {
+    const canvas = document.getElementById('performanceChart');
+    if (!canvas) return;
+
+    const matches = manager.getAllMatches().sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const labels = [];
+    const points = [];
+    const goalsFor = [];
+    const goalsAgainst = [];
+    const wins = [];
+
+    let cumulativePoints = 0;
+    let cumulativeGF = 0;
+    let cumulativeGA = 0;
+    let cumulativeWins = 0;
+
+    matches.forEach(match => {
+        const date = new Date(match.date).toLocaleDateString();
+        labels.push(date);
+
+        cumulativeGF += match.burnbankScore;
+        cumulativeGA += match.opponentScore;
+        goalsFor.push(cumulativeGF);
+        goalsAgainst.push(cumulativeGA);
+
+        if (match.burnbankScore > match.opponentScore) {
+            cumulativeWins++;
+            cumulativePoints += 3;
+        } else if (match.burnbankScore === match.opponentScore) {
+            cumulativePoints += 1;
+        }
+        wins.push(cumulativeWins);
+        points.push(cumulativePoints);
+    });
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Points',
+                    data: points,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Goals For',
+                    data: goalsFor,
+                    borderColor: 'rgb(54, 162, 235)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Goals Against',
+                    data: goalsAgainst,
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Wins',
+                    data: wins,
+                    borderColor: 'rgb(255, 205, 86)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Performance Trends Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
 function render() {
     renderTopScorers();
     renderMatchHistory();
+    renderPerformanceChart();
 }
 
 function bind(el, event, cb) {
@@ -653,28 +693,6 @@ bind(matchForm, 'submit', handleAddOrUpdateMatch);
 bind(addGoalscorerBtn, 'click', () => addGoalscorerRow());
 bind(cancelEditBtn, 'click', clearEditState);
 bind(clearDataBtn, 'click', handleClearData);
-bind(filterOpponentEl, 'input', () => { currentPage = 1; render(); });
-bind(filterOutcomeEl, 'change', () => { currentPage = 1; render(); });
-bind(filterFromDateEl, 'change', () => { currentPage = 1; render(); });
-bind(filterToDateEl, 'change', () => { currentPage = 1; render(); });
-bind(pageSizeEl, 'change', () => { currentPage = 1; render(); });
-bind(prevPageBtn, 'click', () => { currentPage--; render(); });
-bind(nextPageBtn, 'click', () => { currentPage++; render(); });
-bind(userSelect, 'change', e => {
-    activeUser = e.target.value;
-    localStorage.setItem('burnbankActiveUser', activeUser);
-});
-bind(addUserBtn, 'click', () => {
-    const newName = newUserNameInput.value.trim();
-    if (!newName) { alert('Enter a username'); return; }
-    const users = getAllUsers();
-    if (users.includes(newName)) { alert('User already exists'); return; }
-    if (users.length >= 4) { alert('Maximum 4 users allowed'); return; }
-    users.push(newName);
-    saveUsers(users);
-    initUserSelect();
-    newUserNameInput.value = '';
-});
 bind(exportDataBtn, 'click', handleExportData);
 bind(importFileInput, 'change', e => {
     console.log('File input change event fired', e.target.files);
@@ -702,5 +720,4 @@ if (forceSyncBtn) {
 
 matchDateInput.valueAsDate = new Date();
 setGoalscorersData([]);
-initUserSelect();
 initFirebase().then(() => render());

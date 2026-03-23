@@ -326,6 +326,11 @@ main {
     cursor: pointer;
 }
 
+.scorer-bar.leader {
+    background: #fff3cd;
+    border-left-color: #ffc107;
+}
+
 .scorer-bar:hover {
     background: #fff9c4;
 }
@@ -476,5 +481,19 @@ footer {
 
     .section {
         border-radius: 8px;
+    }
+
+    .league-table {
+        font-size: 0.9em;
+    }
+
+    .league-table th, .league-table td {
+        padding: 6px 8px;
+    }
+
+    /* Hide less important columns on small screens */
+    .league-table th:nth-child(7), .league-table td:nth-child(7), /* GA */
+    .league-table th:nth-child(8), .league-table td:nth-child(8) { /* GD */
+        display: none;
     }
 }

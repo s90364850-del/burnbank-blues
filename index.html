@@ -8,6 +8,8 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore-compat.js"></script>
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
@@ -60,62 +62,9 @@
                 </div>
             </section>
 
-            <section class="section filter-section">
-                <h2>Search / Filter / Pagination</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="filterOpponent">Opponent:</label>
-                        <input type="text" id="filterOpponent" placeholder="Filter by opponent">
-                    </div>
-                    <div class="form-group">
-                        <label for="filterOutcome">Outcome:</label>
-                        <select id="filterOutcome">
-                            <option value="all">All</option>
-                            <option value="win">Win</option>
-                            <option value="draw">Draw</option>
-                            <option value="loss">Loss</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="filterFromDate">From Date:</label>
-                        <input type="date" id="filterFromDate">
-                    </div>
-                    <div class="form-group">
-                        <label for="filterToDate">To Date:</label>
-                        <input type="date" id="filterToDate">
-                    </div>
-                </div>
-                <div class="form-row pagination-row">
-                    <div class="form-group">
-                        <label for="pageSize">Page Size:</label>
-                        <select id="pageSize">
-                            <option value="5">5</option>
-                            <option value="10" selected>10</option>
-                            <option value="20">20</option>
-                        </select>
-                    </div>
-                    <div class="page-controls">
-                        <button id="prevPage" class="btn">Prev</button>
-                        <span id="pageInfo">Page 1</span>
-                        <button id="nextPage" class="btn">Next</button>
-                    </div>
-                </div>
-            </section>
-
             <section class="section">
-                <h2>User Management</h2>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="userSelect">Active User:</label>
-                        <select id="userSelect"></select>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="newUserName" placeholder="New user name">
-                        <button type="button" id="addUser" class="btn btn-secondary">Add User</button>
-                    </div>
-                </div>
+                <h2>Performance Trends</h2>
+                <canvas id="performanceChart" width="400" height="200"></canvas>
             </section>
 
             <section class="section">
