@@ -15,8 +15,13 @@ class MatchManager {
         return stored ? JSON.parse(stored) : [];
     }
 
-    saveMatches() {
+    saveMatches(skipCloudSync = false) {
         localStorage.setItem(this.storageKey(), JSON.stringify(this.matches));
+        if (!skipCloudSync) {
+            syncToFirebase().catch(err => {
+                console.error('Failed to sync to Firebase after local save', err);
+            });
+        }
     }
 
     addMatch(match) {
@@ -64,6 +69,102 @@ class MatchManager {
         cutoff.setDate(cutoff.getDate() - this.retentionDays);
         this.matches = this.matches.filter(match => new Date(match.date) >= cutoff);
         this.saveMatches();
+    }
+}
+
+// Firebase shared storage (Cloud Firestore) configuration.
+const FIREBASE_CONFIG = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    // optional:
+    // storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    // messagingSenderId: "...",
+    // appId: "..."
+};
+
+let firebaseInitialized = false;
+let db = null;
+const syncStatusEl = document.getElementById('syncStatus');
+
+function setSyncStatus(message, mode) {
+    if (!syncStatusEl) return;
+    syncStatusEl.textContent = `Sync status: ${message}`;
+    syncStatusEl.classList.remove('online', 'offline');
+    if (mode) syncStatusEl.classList.add(mode);
+}
+
+async function initFirebase() {
+    if (!window.firebase || !FIREBASE_CONFIG.apiKey) {
+        setSyncStatus('firebase not configured, local only', 'offline');
+        return;
+    }
+
+    try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+        firebaseInitialized = true;
+        setSyncStatus('online (Firebase enabled)', 'online');
+        await syncFromFirebase();
+    } catch (err) {
+        console.error('Firebase init failed', err);
+        setSyncStatus('firebase init failed (using local only)', 'offline');
+        firebaseInitialized = false;
+    }
+}
+
+async function syncFromFirebase() {
+    if (!firebaseInitialized || !db) return;
+    try {
+        setSyncStatus('syncing from cloud...', 'online');
+        const snapshot = await db.collection('matches').get();
+        const remoteMatches = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return { ...data, id: Number(data.id) || Number(doc.id) || Date.now() + Math.random() };
+        });
+
+        const merged = {};
+        [...remoteMatches, ...manager.matches].forEach(match => {
+            const id = String(match.id || Date.now() + Math.random());
+            if (!merged[id]) {
+                merged[id] = match;
+            } else {
+                const existingUpdated = new Date(merged[id].updatedAt || 0);
+                const candidateUpdated = new Date(match.updatedAt || 0);
+                merged[id] = candidateUpdated > existingUpdated ? match : merged[id];
+            }
+        });
+
+        manager.matches = Object.values(merged);
+        manager.saveMatches(true); // skip remote loop
+        render();
+        setSyncStatus('synced from cloud', 'online');
+    } catch (err) {
+        console.error('syncFromFirebase error', err);
+        setSyncStatus('cloud sync failed', 'offline');
+    }
+}
+
+async function syncToFirebase() {
+    if (!firebaseInitialized || !db) return;
+    try {
+        setSyncStatus('syncing to cloud...', 'online');
+        const matchesRef = db.collection('matches');
+        const batch = db.batch();
+
+        const snapshot = await matchesRef.get();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+        manager.getAllMatches().forEach(match => {
+            const id = String(match.id || Date.now() + Math.random());
+            batch.set(matchesRef.doc(id), { ...match, id });
+        });
+
+        await batch.commit();
+        setSyncStatus('synced to cloud', 'online');
+    } catch (err) {
+        console.error('syncToFirebase error', err);
+        setSyncStatus('cloud sync failed', 'offline');
     }
 }
 
@@ -148,6 +249,8 @@ function getPreviousScorers() {
     });
     return Array.from(scorers).sort();
 }
+
+function addGoalscorerRow(name = '', goals = 0) {
     const row = document.createElement('div');
     row.className = 'goalscorer-row';
     const previousScorers = getPreviousScorers();
@@ -410,28 +513,6 @@ function filterMatches(matches) {
     return filtered;
 }
 
-    if (opponentFilter) {
-        filtered = filtered.filter(m => m.opponent.toLowerCase().includes(opponentFilter));
-    }
-
-    const outcome = filterOutcomeEl.value;
-    if (outcome !== 'all') {
-        filtered = filtered.filter(m => {
-            const win = m.burnbankScore > m.opponentScore;
-            const draw = m.burnbankScore === m.opponentScore;
-            const loss = m.burnbankScore < m.opponentScore;
-            return (outcome === 'win' && win) || (outcome === 'draw' && draw) || (outcome === 'loss' && loss);
-        });
-    }
-
-    const from = filterFromDateEl.value ? new Date(filterFromDateEl.value) : null;
-    const to = filterToDateEl.value ? new Date(filterToDateEl.value) : null;
-    if (from) filtered = filtered.filter(m => new Date(m.date) >= from);
-    if (to) filtered = filtered.filter(m => new Date(m.date) <= to);
-
-    return filtered;
-}
-
 function getPagedMatches(matches) {
     const pageSize = Number(pageSizeEl.value);
     const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
@@ -606,4 +687,4 @@ importFileInput.addEventListener('change', e => {
 matchDateInput.valueAsDate = new Date();
 setGoalscorersData([]);
 initUserSelect();
-render();
+initFirebase().then(() => render());
