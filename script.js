@@ -683,6 +683,15 @@ importFileInput.addEventListener('change', e => {
     e.target.value = '';
 });
 
+const forceSyncBtn = document.getElementById('forceSyncBtn');
+if (forceSyncBtn) {
+    forceSyncBtn.addEventListener('click', async () => {
+        setSyncStatus('manual sync running...', 'online');
+        await syncFromFirebase();
+        await syncToFirebase();
+    });
+}
+
 matchDateInput.valueAsDate = new Date();
 setGoalscorersData([]);
 initUserSelect();

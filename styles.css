@@ -57,6 +57,20 @@ header p {
     display: inline-block;
 }
 
+.sync-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 12px;
+}
+
+#forceSyncBtn {
+    font-size: 0.9em;
+    padding: 8px 14px;
+}
+
 .sync-status.online {
     background: #d4edda;
     color: #155724;
@@ -338,7 +352,6 @@ main {
     color: white;
     font-size: 12px;
     font-weight: bold;
-}
 }
 
 .scorer-goals {
