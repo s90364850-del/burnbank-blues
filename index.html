@@ -69,26 +69,31 @@
 
             <section class="section">
                 <h2>Add / Edit Match</h2>
+                <div class="form-row mode-select-row">
+                    <label><input type="radio" name="entryMode" value="result" checked> Result</label>
+                    <label><input type="radio" name="entryMode" value="live"> Live Feed</label>
+                </div>
                 <form id="matchForm">
-                    <div class="form-group">
-                        <label for="opponent">Opponent Team:</label>
-                        <input type="text" id="opponent" required placeholder="e.g., City FC">
-                    </div>
+                    <div id="matchResultFields">
+                        <div class="form-group">
+                            <label for="opponent">Opponent Team:</label>
+                            <input type="text" id="opponent" placeholder="e.g., City FC">
+                        </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="burnbankScore">Burnbank Blues Score:</label>
-                            <input type="number" id="burnbankScore" required min="0" placeholder="0">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="burnbankScore">Burnbank Blues Score:</label>
+                                <input type="number" id="burnbankScore" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="opponentScore">Opponent Score:</label>
+                                <input type="number" id="opponentScore" min="0" placeholder="0">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="opponentScore">Opponent Score:</label>
-                            <input type="number" id="opponentScore" required min="0" placeholder="0">
-                        </div>
-                    </div>
 
                     <div class="form-group">
                         <label for="matchDate">Date:</label>
-                        <input type="date" id="matchDate" required>
+                        <input type="date" id="matchDate">
                     </div>
 
                     <div class="form-group">
@@ -97,11 +102,33 @@
                         <button type="button" id="addGoalscorer" class="btn btn-secondary">Add Scorer</button>
                         <small>Enter unique individual scorers and goals. Total must match Burnbank score.</small>
                     </div>
+                    <div id="coachLiveFeedFields" class="hidden">
+                        <div class="form-group">
+                            <label for="coachNotesInput">Coach Live Feed (notes + emoji):</label>
+                            <textarea id="coachNotesInput" rows="5" placeholder="Type your live notes here... e.g., 'Great high press 🟦🔥'" aria-label="Coach Live Feed notes"></textarea>
+                        </div>
+                        <div class="emoji-palette" aria-label="Insert emoji">
+                            <button type="button" class="emoji-btn">⚽</button>
+                            <button type="button" class="emoji-btn">🔥</button>
+                            <button type="button" class="emoji-btn">🛡️</button>
+                            <button type="button" class="emoji-btn">🧠</button>
+                            <button type="button" class="emoji-btn">✔️</button>
+                        </div>
+                        <div id="autocompleteSuggestions" class="autocomplete-suggestions"></div>
+                        <div class="form-note">Autosave to match report runs with each submit; accessible for later review.</div>
+                    </div>
 
                     <input type="hidden" id="editingId" value="">
                     <button type="submit" class="btn btn-primary" id="submitMatch">Add Match</button>
                     <button type="button" id="cancelEdit" class="btn btn-secondary" style="display:none;">Cancel Edit</button>
                 </form>
+            </section>
+
+            <section class="section livefeed-section">
+                <h2>Recent Coach Feed</h2>
+                <div id="liveFeedHistory" class="livefeed-history">
+                    <p class="empty-state">No live feed entries yet</p>
+                </div>
             </section>
 
             <section class="section">

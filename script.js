@@ -72,6 +72,41 @@ class MatchManager {
     }
 }
 
+class CoachFeedManager {
+    constructor() {
+        this.history = this.loadHistory();
+    }
+
+    storageKey() {
+        return 'burnbankCoachFeed';
+    }
+
+    loadHistory() {
+        const stored = localStorage.getItem(this.storageKey());
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    saveHistory() {
+        localStorage.setItem(this.storageKey(), JSON.stringify(this.history));
+    }
+
+    addEntry(entry) {
+        entry.id = Date.now();
+        entry.createdAt = new Date().toISOString();
+        this.history.unshift(entry);
+        this.saveHistory();
+    }
+
+    clearAll() {
+        this.history = [];
+        this.saveHistory();
+    }
+
+    getAllEntries() {
+        return [...this.history].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+}
+
 // Firebase shared storage (Cloud Firestore) configuration.
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyCbpci4OzPDH4KQzRfHn1WkYAlGrdqaUH4",
@@ -191,11 +226,19 @@ function saveUsers(users) {
 
 let activeUser = '';
 let manager = new MatchManager();
+const coachFeedManager = new CoachFeedManager();
 
 const userSelect = document.getElementById('userSelect');
 const newUserNameInput = document.getElementById('newUserName');
 const addUserBtn = document.getElementById('addUser');
 const totalMatchesEl = document.getElementById('totalMatches');
+const entryModeInputs = document.querySelectorAll('input[name="entryMode"]');
+const matchResultFields = document.getElementById('matchResultFields');
+const coachLiveFeedFields = document.getElementById('coachLiveFeedFields');
+const coachNotesInput = document.getElementById('coachNotesInput');
+const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
+const liveFeedHistoryDiv = document.getElementById('liveFeedHistory');
+const emojiButtons = document.querySelectorAll('.emoji-btn');
 const winCountEl = document.getElementById('winCount');
 const drawCountEl = document.getElementById('drawCount');
 const lossCountEl = document.getElementById('lossCount');
@@ -316,6 +359,12 @@ function clearForm() {
     editingIdInput.value = '';
     submitMatchBtn.textContent = 'Add Match';
     cancelEditBtn.style.display = 'none';
+    if (entryModeInputs && entryModeInputs.length) {
+        entryModeInputs.forEach(el => {
+            if (el.value === 'result') el.checked = true;
+        });
+    }
+    setEntryMode('result');
 }
 
 function clearEditState() {
@@ -340,6 +389,27 @@ function isDateDuplicate(date, editingId) {
 function handleAddOrUpdateMatch(e) {
     e.preventDefault();
 
+    const mode = document.querySelector('input[name="entryMode"]:checked')?.value || 'result';
+    if (mode === 'live') {
+        const notes = coachNotesInput.value.trim();
+        if (!notes) {
+            alert('Please enter coach live feed notes before saving.');
+            return;
+        }
+
+        coachFeedManager.addEntry({
+            type: 'live-feed',
+            notes,
+            metaDate: document.getElementById('matchDate').value || new Date().toISOString(),
+            createdBy: activeUser || 'coach'
+        });
+
+        coachNotesInput.value = '';
+        render();
+        alert('Coach live feed entry saved for later review.');
+        return;
+    }
+
     const opponent = document.getElementById('opponent').value.trim();
     const burnbankScore = Number(document.getElementById('burnbankScore').value);
     const opponentScore = Number(document.getElementById('opponentScore').value);
@@ -356,15 +426,15 @@ function handleAddOrUpdateMatch(e) {
         return;
     }
 
-    const totalGoals = goalscorers.reduce((sum, s) => sum + s.goals, 0);
-    if (totalGoals !== burnbankScore) {
-        alert(`Total goals from scorers (${totalGoals}) must match Burnbank score (${burnbankScore}).`);
-        return;
-    }
-
     const editingId = editingIdInput.value;
     if (isDateDuplicate(matchDate, editingId)) {
         alert('A match on this date already exists. The team cannot play two matches on the same day.');
+        return;
+    }
+
+    const totalGoals = goalscorers.reduce((sum, s) => sum + s.goals, 0);
+    if (totalGoals !== burnbankScore) {
+        alert(`Total goals from scorers (${totalGoals}) must match Burnbank score (${burnbankScore}).`);
         return;
     }
 
@@ -537,6 +607,36 @@ function renderTopScorers() {
     playerProfileDiv.innerHTML = '<p>Click a scorer for profile details.</p>';
 }
 
+function setEntryMode(mode) {
+    if (!matchResultFields || !coachLiveFeedFields || !submitMatchBtn) return;
+
+    if (mode === 'live') {
+        matchResultFields.classList.add('hidden');
+        coachLiveFeedFields.classList.remove('hidden');
+        submitMatchBtn.textContent = 'Save Live Feed';
+    } else {
+        matchResultFields.classList.remove('hidden');
+        coachLiveFeedFields.classList.add('hidden');
+        submitMatchBtn.textContent = 'Add Match';
+    }
+}
+
+function renderLiveFeedHistory() {
+    const entries = coachFeedManager.getAllEntries();
+    if (!liveFeedHistoryDiv) return;
+    if (!entries.length) {
+        liveFeedHistoryDiv.innerHTML = '<p class="empty-state">No live feed entries yet</p>';
+        return;
+    }
+
+    liveFeedHistoryDiv.innerHTML = entries.map(entry => `
+        <article class="livefeed-item">
+            <div class="livefeed-meta">${new Date(entry.createdAt).toLocaleString()} · ${entry.createdBy || 'coach'} · ${entry.metaDate ? new Date(entry.metaDate).toLocaleDateString() : 'no date'}</div>
+            <div class="livefeed-text">${entry.notes.replace(/\n/g, '<br>')}</div>
+        </article>
+    `).join('');
+}
+
 function showPlayerProfile(name) {
     const stats = manager.getTopScorers().find(s => s.name === name);
     if (!stats) return;
@@ -678,6 +778,7 @@ function renderPerformanceChart() {
 function render() {
     renderTopScorers();
     renderMatchHistory();
+    renderLiveFeedHistory();
     renderPerformanceChart();
 }
 
@@ -709,6 +810,62 @@ bind(importFileInput, 'change', e => {
     e.target.value = '';
 });
 
+// Entry mode control (Result vs Live Feed)
+entryModeInputs.forEach(input => {
+    input.addEventListener('change', (e) => setEntryMode(e.target.value));
+});
+
+// Emoji insert buttons
+emojiButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (!coachNotesInput) return;
+        const emoji = btn.textContent;
+        const start = coachNotesInput.selectionStart;
+        const end = coachNotesInput.selectionEnd;
+        const text = coachNotesInput.value;
+        coachNotesInput.value = text.substring(0, start) + emoji + text.substring(end);
+        coachNotesInput.focus();
+        coachNotesInput.selectionStart = coachNotesInput.selectionEnd = start + emoji.length;
+        updateAutocomplete();
+    });
+});
+
+const autocompleteWords = ['press', 'counter', 'shape', 'transition', 'substitution', 'possession', 'tackle', 'clearance', 'breakthrough', 'focus', 'tempo', 'attacking', 'defensive'];
+function updateAutocomplete() {
+    if (!autocompleteSuggestions || !coachNotesInput) return;
+    const raw = coachNotesInput.value;
+    const lastWord = raw.split(/\s+/).pop().toLowerCase();
+    if (!lastWord || lastWord.length < 2) {
+        autocompleteSuggestions.innerHTML = '';
+        return;
+    }
+
+    const matches = autocompleteWords.filter(w => w.startsWith(lastWord)).slice(0, 5);
+    if (!matches.length) {
+        autocompleteSuggestions.innerHTML = '';
+        return;
+    }
+
+    autocompleteSuggestions.innerHTML = matches.map(item => `<button type="button" class="autocomplete-item">${item}</button>`).join('');
+    autocompleteSuggestions.querySelectorAll('.autocomplete-item').forEach(button => {
+        button.addEventListener('click', () => {
+            const selection = button.textContent;
+            const parts = coachNotesInput.value.split(/(\s+)/);
+            for (let i = parts.length - 1; i >= 0; i--) {
+                if (/\S/.test(parts[i])) {
+                    parts[i] = selection + ' ';
+                    break;
+                }
+            }
+            coachNotesInput.value = parts.join('');
+            coachNotesInput.focus();
+            autocompleteSuggestions.innerHTML = '';
+        });
+    });
+}
+
+bind(coachNotesInput, 'input', updateAutocomplete);
+
 const forceSyncBtn = document.getElementById('forceSyncBtn');
 if (forceSyncBtn) {
     forceSyncBtn.addEventListener('click', async () => {
@@ -720,4 +877,5 @@ if (forceSyncBtn) {
 
 matchDateInput.valueAsDate = new Date();
 setGoalscorersData([]);
+setEntryMode('result');
 initFirebase().then(() => render());

@@ -161,6 +161,90 @@ main {
     gap: 15px;
 }
 
+.mode-select-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.mode-select-row label {
+    background: #e9f7fd;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.mode-select-row input {
+    margin-right: 6px;
+}
+
+.hidden { display: none !important; }
+
+.autocomplete-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.autocomplete-item {
+    border: 1px solid #001f3f;
+    background: #f7fafc;
+    color: #001f3f;
+    border-radius: 8px;
+    padding: 3px 8px;
+    cursor: pointer;
+}
+
+.emoji-palette {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.emoji-btn {
+    background: #001f3f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.livefeed-history {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.livefeed-item {
+    background: #fff8e1;
+    border-left: 5px solid #ffc107;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.livefeed-meta {
+    font-size: 0.9em;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.livefeed-text {
+    white-space: pre-wrap;
+    color: #001f3f;
+}
+
+.form-note {
+    font-size: 0.85em;
+    color: #555;
+    margin-top: 6px;
+    line-height: 1.2;
+}
+
 .form-group {
     display: flex;
     flex-direction: column;
