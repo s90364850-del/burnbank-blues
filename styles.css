@@ -342,8 +342,10 @@ main {
 }
 
 .scorer-bar-fill {
+    flex: 1;
     height: 20px;
-    background: repeating-linear-gradient(90deg, #001f3f 0px, #001f3f 8px, transparent 8px, transparent 10px);
+    width: 100%;
+    background: linear-gradient(to right, #001f3f 0%, #001f3f var(--fill), transparent var(--fill));
     border-radius: 10px;
     position: relative;
 }
