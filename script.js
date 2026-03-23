@@ -74,13 +74,12 @@ class MatchManager {
 
 // Firebase shared storage (Cloud Firestore) configuration.
 const FIREBASE_CONFIG = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    // optional:
-    // storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    // messagingSenderId: "...",
-    // appId: "..."
+    apiKey: "AIzaSyCbpci4OzPDH4KQzRfHn1WkYAlGrdqaUH4",
+    authDomain: "burnbank-blues-2d2b8.firebaseapp.com",
+    projectId: "burnbank-blues-2d2b8",
+    storageBucket: "burnbank-blues-2d2b8.firebasestorage.app",
+    messagingSenderId: "755981614427",
+    appId: "1:755981614427:web:f832b415c58b4229096e7e"
 };
 
 let firebaseInitialized = false;
