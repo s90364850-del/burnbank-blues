@@ -520,7 +520,7 @@ function renderTopScorers() {
 
     const maxGoals = Math.max(...topScorers.map(s => s.goals));
     topScorersDiv.innerHTML = topScorers.map((scorer, index) => {
-        const fillPercent = Math.min((scorer.goals / 7) * 100, 100); // 1 goal = ~14%, 7 goals = 100%
+        const fillPercent = maxGoals > 0 ? (scorer.goals / maxGoals) * 100 : 0;
         const isLeader = index === 0;
         return `
             <div class="scorer-bar ${isLeader ? 'leader' : ''}" data-scorer-name="${scorer.name}">
