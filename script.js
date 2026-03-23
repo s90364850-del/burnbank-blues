@@ -641,22 +641,30 @@ function render() {
     renderMatchHistory();
 }
 
-matchForm.addEventListener('submit', handleAddOrUpdateMatch);
-addGoalscorerBtn.addEventListener('click', () => addGoalscorerRow());
-cancelEditBtn.addEventListener('click', clearEditState);
-clearDataBtn.addEventListener('click', handleClearData);
-filterOpponentEl.addEventListener('input', () => { currentPage = 1; render(); });
-filterOutcomeEl.addEventListener('change', () => { currentPage = 1; render(); });
-filterFromDateEl.addEventListener('change', () => { currentPage = 1; render(); });
-filterToDateEl.addEventListener('change', () => { currentPage = 1; render(); });
-pageSizeEl.addEventListener('change', () => { currentPage = 1; render(); });
-prevPageBtn.addEventListener('click', () => { currentPage--; render(); });
-nextPageBtn.addEventListener('click', () => { currentPage++; render(); });
-userSelect.addEventListener('change', e => {
+function bind(el, event, cb) {
+    if (!el) {
+        console.warn(`Skipping listener for ${event}: element not found`);
+        return;
+    }
+    el.addEventListener(event, cb);
+}
+
+bind(matchForm, 'submit', handleAddOrUpdateMatch);
+bind(addGoalscorerBtn, 'click', () => addGoalscorerRow());
+bind(cancelEditBtn, 'click', clearEditState);
+bind(clearDataBtn, 'click', handleClearData);
+bind(filterOpponentEl, 'input', () => { currentPage = 1; render(); });
+bind(filterOutcomeEl, 'change', () => { currentPage = 1; render(); });
+bind(filterFromDateEl, 'change', () => { currentPage = 1; render(); });
+bind(filterToDateEl, 'change', () => { currentPage = 1; render(); });
+bind(pageSizeEl, 'change', () => { currentPage = 1; render(); });
+bind(prevPageBtn, 'click', () => { currentPage--; render(); });
+bind(nextPageBtn, 'click', () => { currentPage++; render(); });
+bind(userSelect, 'change', e => {
     activeUser = e.target.value;
     localStorage.setItem('burnbankActiveUser', activeUser);
 });
-addUserBtn.addEventListener('click', () => {
+bind(addUserBtn, 'click', () => {
     const newName = newUserNameInput.value.trim();
     if (!newName) { alert('Enter a username'); return; }
     const users = getAllUsers();
@@ -667,8 +675,8 @@ addUserBtn.addEventListener('click', () => {
     initUserSelect();
     newUserNameInput.value = '';
 });
-exportDataBtn.addEventListener('click', handleExportData);
-importFileInput.addEventListener('change', e => {
+bind(exportDataBtn, 'click', handleExportData);
+bind(importFileInput, 'change', e => {
     console.log('File input change event fired', e.target.files);
     const file = e.target.files[0];
     if (file) {
