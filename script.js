@@ -520,12 +520,12 @@ function renderTopScorers() {
 
     const maxGoals = Math.max(...topScorers.map(s => s.goals));
     topScorersDiv.innerHTML = topScorers.map((scorer, index) => {
-        const width = maxGoals > 0 ? (scorer.goals / maxGoals) * 100 : 0;
+        const barWidth = scorer.goals * 10; // 10px per goal
         const isLeader = index === 0;
         return `
             <div class="scorer-bar ${isLeader ? 'leader' : ''}" data-scorer-name="${scorer.name}">
                 <div class="scorer-name">${index + 1}. ${scorer.name} ${isLeader ? '👑' : ''}</div>
-                <div class="scorer-bar-fill" style="width: ${width}%;" data-goals="${scorer.goals}"></div>
+                <div class="scorer-bar-fill" style="width: ${barWidth}px;" data-goals="${scorer.goals}"></div>
             </div>
         `;
     }).join('');
